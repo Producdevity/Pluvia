@@ -26,6 +26,7 @@ import com.OxGames.Pluvia.data.UserFileInfo
 import com.OxGames.Pluvia.data.UserFilesDownloadResult
 import com.OxGames.Pluvia.data.UserFilesUploadResult
 import com.OxGames.Pluvia.db.PluviaDatabase
+import com.OxGames.Pluvia.db.dao.SteamChatDao
 import com.OxGames.Pluvia.enums.AppType
 import com.OxGames.Pluvia.enums.ControllerSupport
 import com.OxGames.Pluvia.enums.Language
@@ -135,15 +136,18 @@ class SteamService : Service(), IChallengeUrlChanged {
     @Inject
     lateinit var db: PluviaDatabase
 
+    @Inject
+    internal lateinit var chatDao: SteamChatDao
+
     private lateinit var notificationHelper: NotificationHelper
 
-    private var _callbackManager: CallbackManager? = null
+    internal var _callbackManager: CallbackManager? = null
     private var _steamClient: SteamClient? = null
     private var _steamUser: SteamUser? = null
     private var _steamApps: SteamApps? = null
     private var _steamFriends: SteamFriends? = null
     private var _steamCloud: SteamCloud? = null
-    private var _unifiedMessages: SteamUnifiedMessages? = null
+    internal var _unifiedMessages: SteamUnifiedMessages? = null
     private var _unifiedChat: Chat? = null
 
     private val _callbackSubscriptions: ArrayList<Closeable> = ArrayList()

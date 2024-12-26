@@ -12,6 +12,7 @@ import com.OxGames.Pluvia.db.converters.PathTypeConverter
 import com.OxGames.Pluvia.db.converters.UserFileInfoListConverter
 import com.OxGames.Pluvia.db.dao.ChangeNumbersDao
 import com.OxGames.Pluvia.db.dao.FileChangeListsDao
+import com.OxGames.Pluvia.db.dao.SteamChatDao
 import com.OxGames.Pluvia.db.dao.SteamFriendDao
 
 const val DATABASE_NAME = "pluvia.db"
@@ -30,6 +31,8 @@ const val DATABASE_NAME = "pluvia.db"
 abstract class PluviaDatabase : RoomDatabase() {
 
     abstract fun steamFriendDao(): SteamFriendDao
+
+    abstract fun steamChatDao(): SteamChatDao
 
     abstract fun appChangeNumbers(): ChangeNumbersDao
 
