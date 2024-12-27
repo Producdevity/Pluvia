@@ -142,7 +142,7 @@ class SteamService : Service(), IChallengeUrlChanged {
     private lateinit var notificationHelper: NotificationHelper
 
     internal var _callbackManager: CallbackManager? = null
-    private var _steamClient: SteamClient? = null
+    internal var _steamClient: SteamClient? = null
     private var _steamUser: SteamUser? = null
     private var _steamApps: SteamApps? = null
     private var _steamFriends: SteamFriends? = null
