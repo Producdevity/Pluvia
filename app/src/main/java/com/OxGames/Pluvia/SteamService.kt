@@ -16,7 +16,6 @@ import com.OxGames.Pluvia.data.LibraryAssetsInfo
 import com.OxGames.Pluvia.data.LibraryCapsuleInfo
 import com.OxGames.Pluvia.data.LibraryHeroInfo
 import com.OxGames.Pluvia.data.LibraryLogoInfo
-import com.OxGames.Pluvia.data.ManifestInfo
 import com.OxGames.Pluvia.data.PackageInfo
 import com.OxGames.Pluvia.data.PostSyncInfo
 import com.OxGames.Pluvia.data.SaveFilePattern
@@ -28,7 +27,6 @@ import com.OxGames.Pluvia.data.UserFilesUploadResult
 import com.OxGames.Pluvia.db.PluviaDatabase
 import com.OxGames.Pluvia.enums.AppType
 import com.OxGames.Pluvia.enums.ControllerSupport
-import com.OxGames.Pluvia.enums.Language
 import com.OxGames.Pluvia.enums.LoginResult
 import com.OxGames.Pluvia.enums.OS
 import com.OxGames.Pluvia.enums.OSArch
@@ -38,9 +36,11 @@ import com.OxGames.Pluvia.enums.SaveLocation
 import com.OxGames.Pluvia.enums.SyncResult
 import com.OxGames.Pluvia.events.AndroidEvent
 import com.OxGames.Pluvia.events.SteamEvent
-import com.OxGames.Pluvia.utils.Constants
 import com.OxGames.Pluvia.utils.FileUtils
 import com.OxGames.Pluvia.utils.SteamUtils
+import com.OxGames.Pluvia.utils.generateManifest
+import com.OxGames.Pluvia.utils.printFileChangeList
+import com.OxGames.Pluvia.utils.toLangImgMap
 import com.google.android.play.core.ktx.bytesDownloaded
 import com.google.android.play.core.ktx.requestCancelInstall
 import com.google.android.play.core.ktx.requestInstall
@@ -94,7 +94,6 @@ import `in`.dragonbra.javasteam.steam.steamclient.callbackmgr.CallbackManager
 import `in`.dragonbra.javasteam.steam.steamclient.callbacks.ConnectedCallback
 import `in`.dragonbra.javasteam.steam.steamclient.callbacks.DisconnectedCallback
 import `in`.dragonbra.javasteam.steam.steamclient.configuration.SteamConfiguration
-import `in`.dragonbra.javasteam.types.KeyValue
 import `in`.dragonbra.javasteam.types.SteamID
 import `in`.dragonbra.javasteam.util.NetHelpers
 import `in`.dragonbra.javasteam.util.crypto.CryptoHelper
@@ -738,28 +737,6 @@ class SteamService : Service(), IChallengeUrlChanged {
 
             Timber.i("Retrieving save files of ${appInfo.name}")
 
-            val printFileChangeList: (AppFileChangeList) -> Unit = { fileList ->
-                Timber.i(
-                    "GetAppFileListChange($appInfo.appId):" +
-                        "\n\tTotal Files: ${fileList.files.size}" +
-                        "\n\tCurrent Change Number: ${fileList.currentChangeNumber}" +
-                        "\n\tIs Only Delta: ${fileList.isOnlyDelta}" +
-                        "\n\tApp BuildID Hwm: ${fileList.appBuildIDHwm}" +
-                        "\n\tPath Prefixes: \n\t\t${fileList.pathPrefixes.joinToString("\n\t\t")}" +
-                        "\n\tMachine Names: \n\t\t${fileList.machineNames.joinToString("\n\t\t")}" +
-                        fileList.files.joinToString {
-                            "\n\t${it.filename}:" +
-                                "\n\t\tshaFile: ${it.shaFile}" +
-                                "\n\t\ttimestamp: ${it.timestamp}" +
-                                "\n\t\trawFileSize: ${it.rawFileSize}" +
-                                "\n\t\tpersistState: ${it.persistState}" +
-                                "\n\t\tplatformsToSync: ${it.platformsToSync}" +
-                                "\n\t\tpathPrefixIndex: ${it.pathPrefixIndex}" +
-                                "\n\t\tmachineNameIndex: ${it.machineNameIndex}"
-                        },
-                )
-            }
-
             val getPathTypePairs: (AppFileChangeList) -> List<Pair<String, String>> = { fileList ->
                 fileList.pathPrefixes
                     .map {
@@ -771,7 +748,7 @@ class SteamService : Service(), IChallengeUrlChanged {
                     }
                     .flatten()
                     .distinct()
-                    .map { Pair(it, prefixToPath(it)) }
+                    .map { it to prefixToPath(it) }
             }
 
             val convertPrefixes: (AppFileChangeList) -> List<String> = { fileList ->
@@ -836,7 +813,7 @@ class SteamService : Service(), IChallengeUrlChanged {
 
                 val changesExist = newFiles.isNotEmpty() || deletedFiles.isNotEmpty() || modifiedFiles.isNotEmpty()
 
-                Pair(changesExist, FileChanges(deletedFiles, modifiedFiles, newFiles))
+                changesExist to FileChanges(deletedFiles, modifiedFiles, newFiles)
             }
 
             val hasHashConflicts: (Map<String, List<UserFileInfo>>, AppFileChangeList) -> Boolean =
@@ -888,19 +865,18 @@ class SteamService : Service(), IChallengeUrlChanged {
                 appInfo.ufs.saveFilePatterns
                     .filter { userFile -> userFile.root.isWindows }
                     .associate { userFile ->
-                        Pair(
-                            Paths.get(userFile.prefix).pathString,
-                            FileUtils.findFiles(
-                                Paths.get(prefixToPath(userFile.root.toString()), userFile.path),
-                                userFile.pattern,
-                            ).map {
-                                val sha = CryptoHelper.shaHash(Files.readAllBytes(it))
+                        val files = FileUtils.findFiles(
+                            Paths.get(prefixToPath(userFile.root.toString()), userFile.path),
+                            userFile.pattern,
+                        ).map {
+                            val sha = CryptoHelper.shaHash(Files.readAllBytes(it))
 
-                                Timber.i("Found ${it.pathString}\n\tin ${userFile.prefix}\n\twith sha [${sha.joinToString(", ")}]")
+                            Timber.i("Found ${it.pathString}\n\tin ${userFile.prefix}\n\twith sha [${sha.joinToString(", ")}]")
 
-                                UserFileInfo(userFile.root, userFile.path, it.name, Files.getLastModifiedTime(it).toMillis(), sha)
-                            }.collect(Collectors.toList()),
-                        )
+                            UserFileInfo(userFile.root, userFile.path, it.name, Files.getLastModifiedTime(it).toMillis(), sha)
+                        }.collect(Collectors.toList())
+
+                        Paths.get(userFile.prefix).pathString to files
                     }
             }
 
@@ -978,6 +954,7 @@ class SteamService : Service(), IChallengeUrlChanged {
 
                             val httpClient = steamInstance._steamClient!!.configuration.httpClient
 
+                            // TODO I believe outer 'withTimeout' supersedes child withTimeout's
                             withTimeout(requestTimeout) {
                                 val response = httpClient.newCall(request).execute()
 
@@ -1045,7 +1022,7 @@ class SteamService : Service(), IChallengeUrlChanged {
 
                     val filesToUpload = fileChanges.filesCreated
                         .union(fileChanges.filesModified)
-                        .map { Pair(it.prefixPath, it) }
+                        .map { it.prefixPath to it }
 
                     Timber.i(
                         "Beginning app upload batch with ${filesToDelete.size} file(s) to delete " +
@@ -1147,7 +1124,12 @@ class SteamService : Service(), IChallengeUrlChanged {
                                     val response = httpClient.newCall(request).execute()
 
                                     if (!response.isSuccessful) {
-                                        Timber.w("Failed to upload part of ${file.prefixPath}: ${response.message}, ${response.body?.string()}")
+                                        Timber.w(
+                                            "Failed to upload part of %s: %s, %s",
+                                            file.prefixPath,
+                                            response.message,
+                                            response?.body.toString(),
+                                        )
 
                                         uploadFileSuccess = false
                                         uploadBatchSuccess = false
@@ -1219,7 +1201,7 @@ class SteamService : Service(), IChallengeUrlChanged {
 
                 Timber.i("AppChangeNumber: $localAppChangeNumber -> $cloudAppChangeNumber")
 
-                printFileChangeList(appFileListChange)
+                appFileListChange.printFileChangeList(appInfo)
 
                 // retrieve existing user files from local storage
                 val localUserFilesMap: Map<String, List<UserFileInfo>>
@@ -1439,31 +1421,6 @@ class SteamService : Service(), IChallengeUrlChanged {
 
             postSyncInfo
         }
-
-        fun getAvatarURL(avatarHash: String): String {
-            return avatarHash.ifEmpty { null }
-                ?.takeIf { str -> str.isNotEmpty() && !str.all { it == '0' } }
-                ?.let { "${Constants.Persona.AVATAR_BASE_URL}${it.substring(0, 2)}/${it}_full.jpg" }
-                ?: Constants.Persona.MISSING_AVATAR_URL
-        }
-
-        // fun printAllKeyValues(parent: KeyValue, depth: Int = 0) {
-        //     var tabString = ""
-        //
-        //     for (i in 0..depth) {
-        //         tabString += "\t"
-        //     }
-        //
-        //     if (parent.children.isNotEmpty()) {
-        //         Timber.i("$tabString${parent.name}")
-        //
-        //         for (child in parent.children) {
-        //             printAllKeyValues(child, depth + 1)
-        //         }
-        //     } else {
-        //         Timber.i("$tabString${parent.name}: ${parent.value}")
-        //     }
-        // }
 
         private fun login(
             username: String,
@@ -1881,9 +1838,7 @@ class SteamService : Service(), IChallengeUrlChanged {
         _steamFriends = null
         _steamCloud = null
 
-        for (subscription in _callbackSubscriptions) {
-            subscription.close()
-        }
+        _callbackSubscriptions.forEach { it.close() }
 
         _callbackSubscriptions.clear()
         _callbackManager = null
@@ -1924,7 +1879,6 @@ class SteamService : Service(), IChallengeUrlChanged {
         PluviaApp.events.emit(SteamEvent.Connected(isAutoLoggingIn))
     }
 
-    @Suppress("UNUSED_PARAMETER")
     private fun onDisconnected(callback: DisconnectedCallback) {
         Timber.i("Disconnected from Steam. User initiated: ${callback.isUserInitiated}")
 
@@ -2218,42 +2172,7 @@ class SteamService : Service(), IChallengeUrlChanged {
 
             for (i in apps.indices) {
                 val app = apps[i]
-
                 val pkg = packageInfo.values.firstOrNull { it.appIds.contains(app.id) }
-
-                // logD("Received app ${app.id}")
-
-                val generateManifest: (List<KeyValue>) -> Map<String, ManifestInfo> = {
-                    val output = mutableMapOf<String, ManifestInfo>()
-
-                    for (manifest in it) {
-                        output[manifest.name] = ManifestInfo(
-                            name = manifest.name,
-                            gid = manifest["gid"].asLong(),
-                            size = manifest["size"].asLong(),
-                            download = manifest["download"].asLong(),
-                        )
-                    }
-
-                    output
-                }
-
-                val toLangImgMap: (List<KeyValue>) -> Map<Language, String> = { keyValues ->
-                    keyValues
-                        .map {
-                            val language: Language = try {
-                                Language.valueOf(it.name)
-                            } catch (_: Exception) {
-                                Timber.w("Language ${it.name} does not exist in enum")
-                                Language.unknown
-                            }
-
-                            Pair(language, it.value)
-                        }
-                        .filter { it.first != Language.unknown }
-                        .toMap()
-                }
-
                 val launchConfigs = app.keyValues["config"]["launch"].children
 
                 appInfo[app.id] = AppInfo(
@@ -2268,40 +2187,27 @@ class SteamService : Service(), IChallengeUrlChanged {
                         }
                         .associate { currentDepot ->
                             val depotId = currentDepot.name.toInt()
-
                             // val currentDepot = app.keyValues["depots"]["$depotId"]
+                            val manifests = currentDepot["manifests"].children.generateManifest()
+                            val encryptedManifests = currentDepot["encryptedManifests"].children.generateManifest()
 
-                            val manifests = generateManifest(currentDepot["manifests"].children)
-
-                            val encryptedManifests = generateManifest(
-                                currentDepot["encryptedManifests"].children,
-                            )
-
-                            Pair(
-                                depotId,
-                                DepotInfo(
-                                    depotId = depotId,
-                                    dlcAppId = currentDepot["dlcappid"].asInteger(INVALID_APP_ID),
-                                    depotFromApp = currentDepot["depotfromapp"].asInteger(
-                                        INVALID_APP_ID,
-                                    ),
-                                    sharedInstall = currentDepot["sharedinstall"].asBoolean(),
-                                    osList = OS.from(currentDepot["config"]["oslist"].value),
-                                    osArch = OSArch.from(currentDepot["config"]["osarch"].value),
-                                    manifests = manifests,
-                                    encryptedManifests = encryptedManifests,
-                                ),
+                            depotId to DepotInfo(
+                                depotId = depotId,
+                                dlcAppId = currentDepot["dlcappid"].asInteger(INVALID_APP_ID),
+                                depotFromApp = currentDepot["depotfromapp"].asInteger(INVALID_APP_ID),
+                                sharedInstall = currentDepot["sharedinstall"].asBoolean(),
+                                osList = OS.from(currentDepot["config"]["oslist"].value),
+                                osArch = OSArch.from(currentDepot["config"]["osarch"].value),
+                                manifests = manifests,
+                                encryptedManifests = encryptedManifests,
                             )
                         },
                     branches = app.keyValues["depots"]["branches"].children.associate {
-                        Pair(
-                            it.name,
-                            BranchInfo(
-                                name = it.name,
-                                buildId = it["buildid"].asLong(),
-                                pwdRequired = it["pwdrequired"].asBoolean(),
-                                timeUpdated = Date(it["timeupdated"].asLong() * 1000L),
-                            ),
+                        it.name to BranchInfo(
+                            name = it.name,
+                            buildId = it["buildid"].asLong(),
+                            pwdRequired = it["pwdrequired"].asBoolean(),
+                            timeUpdated = Date(it["timeupdated"].asLong() * 1000L),
                         )
                     },
                     name = app.keyValues["common"]["name"].value.orEmpty(),
@@ -2319,20 +2225,20 @@ class SteamService : Service(), IChallengeUrlChanged {
                     iconHash = app.keyValues["common"]["icon"].value.orEmpty(),
                     clientIconHash = app.keyValues["common"]["clienticon"].value.orEmpty(),
                     clientTgaHash = app.keyValues["common"]["clienttga"].value.orEmpty(),
-                    smallCapsule = toLangImgMap(app.keyValues["common"]["small_capsule"].children),
-                    headerImage = toLangImgMap(app.keyValues["common"]["header_image"].children),
+                    smallCapsule = app.keyValues["common"]["small_capsule"].children.toLangImgMap(),
+                    headerImage = app.keyValues["common"]["header_image"].children.toLangImgMap(),
                     libraryAssets = LibraryAssetsInfo(
                         libraryCapsule = LibraryCapsuleInfo(
-                            image = toLangImgMap(app.keyValues["common"]["library_assets_full"]["library_capsule"]["image"].children),
-                            image2x = toLangImgMap(app.keyValues["common"]["library_assets_full"]["library_capsule"]["image2x"].children),
+                            image = app.keyValues["common"]["library_assets_full"]["library_capsule"]["image"].children.toLangImgMap(),
+                            image2x = app.keyValues["common"]["library_assets_full"]["library_capsule"]["image2x"].children.toLangImgMap(),
                         ),
                         libraryHero = LibraryHeroInfo(
-                            image = toLangImgMap(app.keyValues["common"]["library_assets_full"]["library_hero"]["image"].children),
-                            image2x = toLangImgMap(app.keyValues["common"]["library_assets_full"]["library_hero"]["image2x"].children),
+                            image = app.keyValues["common"]["library_assets_full"]["library_hero"]["image"].children.toLangImgMap(),
+                            image2x = app.keyValues["common"]["library_assets_full"]["library_hero"]["image2x"].children.toLangImgMap(),
                         ),
                         libraryLogo = LibraryLogoInfo(
-                            image = toLangImgMap(app.keyValues["common"]["library_assets_full"]["library_logo"]["image"].children),
-                            image2x = toLangImgMap(app.keyValues["common"]["library_assets_full"]["library_logo"]["image2x"].children),
+                            image = app.keyValues["common"]["library_assets_full"]["library_logo"]["image"].children.toLangImgMap(),
+                            image2x = app.keyValues["common"]["library_assets_full"]["library_logo"]["image2x"].children.toLangImgMap(),
                         ),
                     ),
                     primaryGenre = app.keyValues["common"]["primary_genre"].asBoolean(),
