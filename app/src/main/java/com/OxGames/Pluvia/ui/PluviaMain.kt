@@ -12,7 +12,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,6 +43,7 @@ import com.OxGames.Pluvia.ui.screen.login.UserLoginScreen
 import com.OxGames.Pluvia.ui.screen.settings.SettingsScreen
 import com.OxGames.Pluvia.ui.screen.xserver.XServerScreen
 import com.OxGames.Pluvia.ui.theme.PluviaTheme
+import com.OxGames.Pluvia.utils.Constants
 import com.google.android.play.core.splitcompat.SplitCompat
 import com.winlator.container.ContainerManager
 import com.winlator.core.WineInfo
@@ -197,7 +197,7 @@ fun PluviaMain(
     when (msgDialogState.type) {
         DialogType.SUPPORT -> {
             onConfirmClick = {
-                uriHandler.openUri("https://buy.stripe.com/5kAaFU1bx2RFeLmbII")
+                uriHandler.openUri(Constants.Misc.DONATION_LINK)
                 PrefManager.tipped = true
                 msgDialogState = MessageDialogState(visible = false)
             }
