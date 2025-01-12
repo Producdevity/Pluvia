@@ -12,6 +12,7 @@ import com.OxGames.Pluvia.enums.LoginResult
 import com.OxGames.Pluvia.enums.PathType
 import com.OxGames.Pluvia.events.AndroidEvent
 import com.OxGames.Pluvia.events.SteamEvent
+import com.OxGames.Pluvia.ui.data.MainState
 import com.OxGames.Pluvia.ui.enums.PluviaScreen
 import com.winlator.xserver.Window
 import `in`.dragonbra.javasteam.steam.handlers.steamapps.AppProcessInfo
@@ -29,30 +30,17 @@ import timber.log.Timber
 
 class MainViewModel : ViewModel() {
 
-    data class State(
-        val resettedScreen: PluviaScreen? = null,
-        val currentScreen: PluviaScreen = PluviaScreen.LoginUser,
-        val hasLaunched: Boolean = false,
-        val loadingDialogVisible: Boolean = false,
-        val loadingDialogProgress: Float = 0F,
-        val annoyingDialogShown: Boolean = false,
-        val hasCrashedLastStart: Boolean = false,
-        val isSteamConnected: Boolean = false,
-        val launchedAppId: Int = 0,
-        val bootToContainer: Boolean = false,
-    )
-
-    sealed class UiEvent {
-        data object OnBackPressed : UiEvent()
-        data object OnLoggedOut : UiEvent()
-        data object LaunchApp : UiEvent()
-        data class OnLogonEnded(val result: LoginResult) : UiEvent()
+    sealed class MainUiEvent {
+        data object OnBackPressed : MainUiEvent()
+        data object OnLoggedOut : MainUiEvent()
+        data object LaunchApp : MainUiEvent()
+        data class OnLogonEnded(val result: LoginResult) : MainUiEvent()
     }
 
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+    private val _state = MutableStateFlow(MainState())
+    val state: StateFlow<MainState> = _state.asStateFlow()
 
-    private val _uiEvent = Channel<UiEvent>()
+    private val _uiEvent = Channel<MainUiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
     private val onSteamConnected: (SteamEvent.Connected) -> Unit = {
@@ -71,21 +59,21 @@ class MainViewModel : ViewModel() {
 
     private val onBackPressed: (AndroidEvent.BackPressed) -> Unit = {
         viewModelScope.launch {
-            _uiEvent.send(UiEvent.OnBackPressed)
+            _uiEvent.send(MainUiEvent.OnBackPressed)
         }
     }
 
     private val onLogonEnded: (SteamEvent.LogonEnded) -> Unit = {
         Timber.i("Received logon ended")
         viewModelScope.launch {
-            _uiEvent.send(UiEvent.OnLogonEnded(it.loginResult))
+            _uiEvent.send(MainUiEvent.OnLogonEnded(it.loginResult))
         }
     }
 
     private val onLoggedOut: (SteamEvent.LoggedOut) -> Unit = {
         Timber.i("Received logged out")
         viewModelScope.launch {
-            _uiEvent.send(UiEvent.OnLoggedOut)
+            _uiEvent.send(MainUiEvent.OnLoggedOut)
         }
     }
 
@@ -165,7 +153,7 @@ class MainViewModel : ViewModel() {
         //  before entering XServerScreen
         viewModelScope.launch {
             PluviaApp.events.emit(AndroidEvent.SetAllowedOrientation(PrefManager.allowedOrientation))
-            _uiEvent.send(UiEvent.LaunchApp)
+            _uiEvent.send(MainUiEvent.LaunchApp)
         }
     }
 

@@ -77,7 +77,7 @@ fun PluviaMain(
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                MainViewModel.UiEvent.OnBackPressed -> {
+                MainViewModel.MainUiEvent.OnBackPressed -> {
                     if (hasBack) {
                         // TODO: check if back leads to log out and present confidence modal
                         navController.popBackStack()
@@ -86,7 +86,7 @@ fun PluviaMain(
                     }
                 }
 
-                MainViewModel.UiEvent.OnLoggedOut -> {
+                MainViewModel.MainUiEvent.OnLoggedOut -> {
                     // Pop stack and go back to login.
                     navController.popBackStack(
                         route = PluviaScreen.LoginUser.name,
@@ -95,11 +95,11 @@ fun PluviaMain(
                     )
                 }
 
-                MainViewModel.UiEvent.LaunchApp -> {
+                MainViewModel.MainUiEvent.LaunchApp -> {
                     navController.navigate(PluviaScreen.XServer.name)
                 }
 
-                is MainViewModel.UiEvent.OnLogonEnded -> {
+                is MainViewModel.MainUiEvent.OnLogonEnded -> {
                     when (event.result) {
                         LoginResult.Success -> {
                             // TODO: add preference for first screen on login

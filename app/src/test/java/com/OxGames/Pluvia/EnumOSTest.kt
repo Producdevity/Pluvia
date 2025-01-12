@@ -1,9 +1,9 @@
 package com.OxGames.Pluvia
 
 import com.OxGames.Pluvia.enums.OS
+import java.util.EnumSet
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
-import java.util.EnumSet
 
 class EnumOSTest {
 

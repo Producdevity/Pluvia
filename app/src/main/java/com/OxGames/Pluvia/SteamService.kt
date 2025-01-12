@@ -886,7 +886,7 @@ class SteamService : Service(), IChallengeUrlChanged {
 
             val getLocalUserFilesAsPrefixMap: () -> Map<String, List<UserFileInfo>> = {
                 appInfo.ufs.saveFilePatterns
-                    .filter { userFile -> userFile.root.isWindows() }
+                    .filter { userFile -> userFile.root.isWindows }
                     .associate { userFile ->
                         Pair(
                             Paths.get(userFile.prefix).pathString,

@@ -28,7 +28,7 @@ enum class PathType {
      * [com.winlator.container.Container] beforehand.
      */
     fun toAbsPath(context: Context, appId: Int): String {
-        var path = when (this) {
+        val path = when (this) {
             GameInstall -> SteamService.getAppDirPath(appId)
             WinMyDocuments -> Paths.get(
                 ImageFs.find(context).rootDir.absolutePath,
@@ -37,6 +37,7 @@ enum class PathType {
                 ImageFs.USER,
                 "Documents/",
             ).toString()
+
             WinAppDataLocal -> Paths.get(
                 ImageFs.find(context).rootDir.absolutePath,
                 ImageFs.WINEPREFIX,
@@ -44,6 +45,7 @@ enum class PathType {
                 ImageFs.USER,
                 "AppData/Local/",
             ).toString()
+
             WinAppDataLocalLow -> Paths.get(
                 ImageFs.find(context).rootDir.absolutePath,
                 ImageFs.WINEPREFIX,
@@ -51,6 +53,7 @@ enum class PathType {
                 ImageFs.USER,
                 "AppData/LocalLow/",
             ).toString()
+
             WinAppDataRoaming -> Paths.get(
                 ImageFs.find(context).rootDir.absolutePath,
                 ImageFs.WINEPREFIX,
@@ -58,6 +61,7 @@ enum class PathType {
                 ImageFs.USER,
                 "AppData/Roaming/",
             ).toString()
+
             WinSavedGames -> Paths.get(
                 ImageFs.find(context).rootDir.absolutePath,
                 ImageFs.WINEPREFIX,
@@ -65,6 +69,7 @@ enum class PathType {
                 ImageFs.USER,
                 "Saved Games/",
             ).toString()
+
             else -> {
                 Timber.e("Did not recognize or unsupported path type $this")
                 SteamService.getAppDirPath(appId)
@@ -73,16 +78,18 @@ enum class PathType {
         return if (!path.endsWith("/")) "$path/" else path
     }
 
-    fun isWindows(): Boolean = when (this) {
-        GameInstall,
-        WinMyDocuments,
-        WinAppDataLocal,
-        WinAppDataLocalLow,
-        WinAppDataRoaming,
-        WinSavedGames,
-        -> true
-        else -> false
-    }
+    val isWindows: Boolean
+        get() = when (this) {
+            GameInstall,
+            WinMyDocuments,
+            WinAppDataLocal,
+            WinAppDataLocalLow,
+            WinAppDataRoaming,
+            WinSavedGames,
+            -> true
+
+            else -> false
+        }
 
     companion object {
         fun from(keyValue: String?): PathType {
@@ -90,36 +97,47 @@ enum class PathType {
                 "%${GameInstall.name.lowercase()}%",
                 GameInstall.name.lowercase(),
                 -> GameInstall
+
                 "%${WinMyDocuments.name.lowercase()}%",
                 WinMyDocuments.name.lowercase(),
                 -> WinMyDocuments
+
                 "%${WinAppDataLocal.name.lowercase()}%",
                 WinAppDataLocal.name.lowercase(),
                 -> WinAppDataLocal
+
                 "%${WinAppDataLocalLow.name.lowercase()}%",
                 WinAppDataLocalLow.name.lowercase(),
                 -> WinAppDataLocalLow
+
                 "%${WinAppDataRoaming.name.lowercase()}%",
                 WinAppDataRoaming.name.lowercase(),
                 -> WinAppDataRoaming
+
                 "%${WinSavedGames.name.lowercase()}%",
                 WinSavedGames.name.lowercase(),
                 -> WinSavedGames
+
                 "%${LinuxHome.name.lowercase()}%",
                 LinuxHome.name.lowercase(),
                 -> LinuxHome
+
                 "%${LinuxXdgDataHome.name.lowercase()}%",
                 LinuxXdgDataHome.name.lowercase(),
                 -> LinuxXdgDataHome
+
                 "%${LinuxXdgConfigHome.name.lowercase()}%",
                 LinuxXdgConfigHome.name.lowercase(),
                 -> LinuxXdgConfigHome
+
                 "%${MacHome.name.lowercase()}%",
                 MacHome.name.lowercase(),
                 -> MacHome
+
                 "%${MacAppSupport.name.lowercase()}%",
                 MacAppSupport.name.lowercase(),
                 -> MacAppSupport
+
                 else -> {
                     if (keyValue != null) {
                         Timber.w("Could not identify $keyValue as PathType")
