@@ -100,7 +100,7 @@ fun XServerScreen(
     Timber.i("Starting up XServerScreen")
     val context = LocalContext.current
 
-    PluviaApp.events.emit(AndroidEvent.SetAppBarVisibility(false))
+    // PluviaApp.events.emit(AndroidEvent.SetAppBarVisibility(false))
     PluviaApp.events.emit(AndroidEvent.SetSystemUIVisibility(false))
     PluviaApp.events.emit(
         AndroidEvent.SetAllowedOrientation(PrefManager.allowedOrientation),

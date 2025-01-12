@@ -54,6 +54,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.OxGames.Pluvia.R
@@ -67,7 +68,7 @@ import com.OxGames.Pluvia.ui.theme.PluviaTheme
 
 @Composable
 fun UserLoginScreen(
-    viewModel: UserLoginViewModel,
+    viewModel: UserLoginViewModel = hiltViewModel(),
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
     val userLoginState by viewModel.loginState.collectAsState()
