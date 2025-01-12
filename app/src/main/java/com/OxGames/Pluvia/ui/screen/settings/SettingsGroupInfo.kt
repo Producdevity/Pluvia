@@ -45,7 +45,7 @@ fun SettingsGroupInfo() {
                 VKD3D - gitlab.winehq.org/wine/vkd3d
                 D8VK - github.com/AlpyneDreams/d8vk
                 CNC DDraw - github.com/FunkyFr3sh/cnc-ddraw
-            """.trimIndent(),
+        """.trimIndent(),
     )
 
     SettingsGroup(title = { Text(text = "Info") }) {
