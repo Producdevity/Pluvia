@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.filled.SortByAlpha
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -193,8 +195,16 @@ private fun LibraryDetailPane(
     Surface {
         if (appId == SteamService.INVALID_APP_ID) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                // TODO prettify this?
-                Text("Select an item")
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shadowElevation = 8.dp,
+                ) {
+                    Text(
+                        modifier = Modifier.padding(24.dp),
+                        text = "Select an item in the list to view game info",
+                    )
+                }
             }
         } else {
             AppScreen(
