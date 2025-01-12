@@ -29,6 +29,7 @@ import com.OxGames.Pluvia.data.LaunchInfo
 import com.OxGames.Pluvia.events.AndroidEvent
 import com.OxGames.Pluvia.events.SteamEvent
 import com.OxGames.Pluvia.ui.data.XServerState
+import com.OxGames.Pluvia.utils.Constants
 import com.winlator.container.Container
 import com.winlator.container.ContainerManager
 import com.winlator.core.AppUtils
@@ -77,11 +78,6 @@ import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
-
-object Constants {
-    const val DEFAULT_WINE_DEBUG_CHANNELS = "warn,err,fixme,loaddll"
-    const val CONTAINER_PATTERN_COMPRESSION_LEVEL = 9
-}
 
 // TODO logs in composables are 'unstable' which can cause recomposition (performance issues)
 
@@ -589,7 +585,7 @@ private fun setupXEnvironment(
     envVars.put("WINEPREFIX", ImageFs.WINEPREFIX)
 
     val enableWineDebug = true // preferences.getBoolean("enable_wine_debug", false)
-    val wineDebugChannels = PrefManager.getString("wine_debug_channels", Constants.DEFAULT_WINE_DEBUG_CHANNELS)
+    val wineDebugChannels = PrefManager.getString("wine_debug_channels", Constants.XServer.DEFAULT_WINE_DEBUG_CHANNELS)
     envVars.put("WINEDEBUG", if (enableWineDebug && !wineDebugChannels.isEmpty()) "+" + wineDebugChannels.replace(",", ",+") else "-all")
 
     val imageFs = ImageFs.find(context)
@@ -776,7 +772,7 @@ private fun generateWineprefix(
                         TarCompressorUtils.Type.ZSTD,
                         File(rootDir, ImageFs.WINEPREFIX),
                         containerPatternFile,
-                        Constants.CONTAINER_PATTERN_COMPRESSION_LEVEL,
+                        Constants.XServer.CONTAINER_PATTERN_COMPRESSION_LEVEL,
                     )
 
                     if (!containerPatternFile.renameTo(File(installedWineDir, containerPatternFile.name)) ||

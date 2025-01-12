@@ -1,6 +1,5 @@
 package com.OxGames.Pluvia
 
-import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -39,6 +38,7 @@ import com.OxGames.Pluvia.enums.SaveLocation
 import com.OxGames.Pluvia.enums.SyncResult
 import com.OxGames.Pluvia.events.AndroidEvent
 import com.OxGames.Pluvia.events.SteamEvent
+import com.OxGames.Pluvia.utils.Constants
 import com.OxGames.Pluvia.utils.FileUtils
 import com.OxGames.Pluvia.utils.SteamUtils
 import com.google.android.play.core.ktx.bytesDownloaded
@@ -169,8 +169,7 @@ class SteamService : Service(), IChallengeUrlChanged {
 
     companion object {
         const val MAX_RETRY_ATTEMPTS = 20
-        const val AVATAR_BASE_URL = "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/"
-        const val MISSING_AVATAR_URL = "${AVATAR_BASE_URL}fe/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg"
+
         const val INVALID_APP_ID: Int = Int.MAX_VALUE
         const val INVALID_PKG_ID: Int = Int.MAX_VALUE
         const val INVALID_DEPOT_ID: Int = Int.MAX_VALUE
@@ -740,7 +739,6 @@ class SteamService : Service(), IChallengeUrlChanged {
             Timber.i("Retrieving save files of ${appInfo.name}")
 
             val printFileChangeList: (AppFileChangeList) -> Unit = { fileList ->
-                @SuppressLint("BinaryOperationInTimber")
                 Timber.i(
                     "GetAppFileListChange($appInfo.appId):" +
                         "\n\tTotal Files: ${fileList.files.size}" +
@@ -1095,7 +1093,6 @@ class SteamService : Service(), IChallengeUrlChanged {
                                 )
 
                                 Timber.i("Uploading to $httpUrl")
-                                @SuppressLint("BinaryOperationInTimber")
                                 Timber.i(
                                     "Block Request:" +
                                         "\n\tblockOffset: ${blockRequest.blockOffset}" +
@@ -1446,8 +1443,8 @@ class SteamService : Service(), IChallengeUrlChanged {
         fun getAvatarURL(avatarHash: String): String {
             return avatarHash.ifEmpty { null }
                 ?.takeIf { str -> str.isNotEmpty() && !str.all { it == '0' } }
-                ?.let { "${AVATAR_BASE_URL}${it.substring(0, 2)}/${it}_full.jpg" }
-                ?: MISSING_AVATAR_URL
+                ?.let { "${Constants.Persona.AVATAR_BASE_URL}${it.substring(0, 2)}/${it}_full.jpg" }
+                ?: Constants.Persona.MISSING_AVATAR_URL
         }
 
         // fun printAllKeyValues(parent: KeyValue, depth: Int = 0) {
