@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
@@ -27,7 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.OxGames.Pluvia.ui.component.topbar.AccountButton
 import com.OxGames.Pluvia.ui.component.topbar.BackButton
 import com.OxGames.Pluvia.ui.theme.PluviaTheme
@@ -81,7 +84,13 @@ private fun DownloadsScreenContent(
         detailPane = {
             val value = (navigator.currentDestination?.content ?: -1L)
             AnimatedPane {
-                DownloadsScreenDetail(value = value)
+                DownloadsScreenDetail(
+                    value = value,
+                    onBack = {
+                        // We're still in Adaptive navigation.
+                        navigator.navigateBack()
+                    },
+                )
             }
         },
     )
@@ -128,20 +137,47 @@ private fun DownloadsScreenPane(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DownloadsScreenDetail(value: Long) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center,
-        content = {
-            if (value == -1L) {
-                Text("Choose something from Download")
-            } else {
-                Text("Hi Download $value")
+private fun DownloadsScreenDetail(
+    value: Long,
+    onBack: () -> Unit,
+) {
+    val windowWidth = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
+
+    Scaffold(
+        topBar = {
+            // Show Top App Bar when in Compact or Medium screen space.
+            if (windowWidth == WindowWidthSizeClass.COMPACT || windowWidth == WindowWidthSizeClass.MEDIUM) {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = "TODO Title",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    navigationIcon = {
+                        BackButton(onClick = onBack)
+                    },
+                )
             }
         },
-    )
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center,
+            content = {
+                if (value == -1L) {
+                    Text("Choose something from Download")
+                } else {
+                    Text("Hi Download $value")
+                }
+            },
+        )
+    }
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)
