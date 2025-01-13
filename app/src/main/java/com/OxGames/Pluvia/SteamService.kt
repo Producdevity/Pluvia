@@ -362,7 +362,7 @@ class SteamService : Service(), IChallengeUrlChanged {
                                             SplitInstallSessionStatus.INSTALLING,
                                             SplitInstallSessionStatus.DOWNLOADED,
                                             SplitInstallSessionStatus.DOWNLOADING,
-                                                -> {
+                                            -> {
                                                 if (!isActive) {
                                                     splitManager.cancelInstall(moduleInstallSessionId)
                                                     break

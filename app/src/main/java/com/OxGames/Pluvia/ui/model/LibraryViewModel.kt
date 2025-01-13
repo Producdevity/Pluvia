@@ -42,8 +42,8 @@ class LibraryViewModel : ViewModel() {
                     currentValue.copy()
                 }
 
-                FabFilter.INSTALLED -> currentValue.copy(searchInstalled = !currentValue.searchInstalled)
-                FabFilter.ALPHABETIC -> currentValue.copy(searchAlphabetic = !currentValue.searchAlphabetic)
+                FabFilter.INSTALLED -> currentValue.copy(appInfoSortType = FabFilter.INSTALLED)
+                FabFilter.ALPHABETIC -> currentValue.copy(appInfoSortType = FabFilter.ALPHABETIC)
             }
         }
 
@@ -53,10 +53,10 @@ class LibraryViewModel : ViewModel() {
     private fun getAppList() {
         val list = with(state.value) {
             SteamService.getAppList(EnumSet.of(AppType.game))
-                .filter { if (searchInstalled) SteamService.isAppInstalled(it.appId) else true }
+                .filter { if (appInfoSortType == FabFilter.INSTALLED) SteamService.isAppInstalled(it.appId) else true }
                 .filter { it.name.contains(searchText, true) }
                 .let {
-                    if (searchAlphabetic) {
+                    if (appInfoSortType == FabFilter.ALPHABETIC) {
                         it.sortedBy { appInfo -> appInfo.name }
                     } else {
                         it.sortedBy { appInfo -> appInfo.receiveIndex }.reversed()
