@@ -11,7 +11,12 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.OxGames.Pluvia.di.PathsModule
 import com.OxGames.Pluvia.ui.enums.Orientation
+import dagger.hilt.EntryPoint
+import dagger.hilt.EntryPoints
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import `in`.dragonbra.javasteam.enums.EPersonaState
 import java.util.EnumSet
 import kotlinx.coroutines.CoroutineName
@@ -27,6 +32,12 @@ import timber.log.Timber
  */
 object PrefManager {
 
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface PrefManagerEntryPoint {
+        fun paths(): PathsModule
+    }
+
     private val Context.datastore by preferencesDataStore(
         name = "PluviaPreferences",
         corruptionHandler = ReplaceFileCorruptionHandler {
@@ -39,8 +50,15 @@ object PrefManager {
 
     private lateinit var dataStore: DataStore<Preferences>
 
+    private lateinit var steamPaths: PathsModule
+
     fun init(context: Context) {
         dataStore = context.datastore
+
+        steamPaths = EntryPoints.get(
+            context.applicationContext,
+            PrefManagerEntryPoint::class.java,
+        ).paths()
     }
 
     fun clearPreferences() {
@@ -98,14 +116,14 @@ object PrefManager {
 
     private val APP_INSTALL_PATH = stringPreferencesKey("app_install_path")
     var appInstallPath: String
-        get() = getPref(APP_INSTALL_PATH, SteamService.defaultAppInstallPath)
+        get() = getPref(APP_INSTALL_PATH, steamPaths.defaultAppInstallPath)
         set(value) {
             setPref(APP_INSTALL_PATH, value)
         }
 
     private val APP_STAGING_PATH = stringPreferencesKey("app_staging_path")
     var appStagingPath: String
-        get() = getPref(APP_STAGING_PATH, SteamService.defaultAppStagingPath)
+        get() = getPref(APP_STAGING_PATH, steamPaths.defaultAppStagingPath)
         set(value) {
             setPref(APP_STAGING_PATH, value)
         }

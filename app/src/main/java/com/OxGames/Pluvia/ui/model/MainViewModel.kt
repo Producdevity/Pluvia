@@ -160,7 +160,7 @@ class MainViewModel : ViewModel() {
     fun exitSteamApp(context: Context, appId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             SteamService.notifyRunningProcesses()
-            SteamService.closeApp(appId, this) { prefix ->
+            SteamService.closeApp(appId) { prefix ->
                 PathType.from(prefix).toAbsPath(context, appId)
             }.await()
         }

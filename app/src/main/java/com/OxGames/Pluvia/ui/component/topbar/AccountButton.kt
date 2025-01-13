@@ -7,9 +7,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.OxGames.Pluvia.PluviaApp
@@ -22,18 +24,20 @@ import com.OxGames.Pluvia.ui.theme.PluviaTheme
 import com.OxGames.Pluvia.ui.util.ListItemImage
 import com.OxGames.Pluvia.utils.getAvatarURL
 import `in`.dragonbra.javasteam.enums.EPersonaState
+import kotlinx.coroutines.launch
 
 @Composable
 fun AccountButton(
     onSettings: () -> Unit,
     onLogout: () -> Unit,
 ) {
-    var persona by remember {
-        var persona: SteamFriend? = null
+    val scope = rememberCoroutineScope()
+    var persona by remember { mutableStateOf<SteamFriend?>(null) }
+
+    LaunchedEffect(Unit) {
         SteamService.userSteamId?.let { id ->
             persona = SteamService.getPersonaStateOf(id)
         }
-        mutableStateOf(persona)
     }
 
     DisposableEffect(true) {
@@ -55,8 +59,10 @@ fun AccountButton(
         avatarHash = persona?.avatarHash.orEmpty(),
         state = persona?.state ?: EPersonaState.Offline,
         onStatusChange = {
-            PrefManager.personaState = it
-            SteamService.setPersonaState(it)
+            scope.launch {
+                PrefManager.personaState = it
+                SteamService.setPersonaState(it)
+            }
         },
         onSettings = {
             onSettings()

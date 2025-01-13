@@ -11,6 +11,7 @@ import com.OxGames.Pluvia.events.SteamEvent
 import com.OxGames.Pluvia.ui.data.UserLoginState
 import `in`.dragonbra.javasteam.steam.authentication.IAuthenticator
 import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,7 @@ class UserLoginViewModel : ViewModel() {
 
     private val submitChannel = Channel<String>()
 
-    val authenticator = object : IAuthenticator {
+    private val authenticator = object : IAuthenticator {
         override fun acceptDeviceConfirmation(): CompletableFuture<Boolean> {
             Timber.i("Two-Factor, device confirmation")
 
@@ -117,9 +118,11 @@ class UserLoginViewModel : ViewModel() {
                 loginResult = it.loginResult,
             )
         }
-        if (it.loginResult != LoginResult.Success) {
-            SteamService.startLoginWithQr()
-        }
+
+        // Why is this here? - Lossy Jan 12 2025
+        // if (it.loginResult != LoginResult.Success) {
+        //     SteamService.startLoginWithQr()
+        // }
     }
 
     private val onBackPressed: (AndroidEvent.BackPressed) -> Unit = {
@@ -168,6 +171,21 @@ class UserLoginViewModel : ViewModel() {
         SteamService.stopLoginWithQr()
     }
 
+    fun onCredentialLogin() {
+        viewModelScope.launch(Dispatchers.IO) {
+            with(_loginState.value) {
+                if (username.isNotEmpty() && password.isNotEmpty()) {
+                    SteamService.startLoginWithCredentials(
+                        username = username,
+                        password = password,
+                        shouldRememberPassword = rememberPass,
+                        authenticator = authenticator,
+                    )
+                }
+            }
+        }
+    }
+
     fun submit() {
         viewModelScope.launch {
             submitChannel.send(_loginState.value.twoFactorCode)
@@ -200,16 +218,18 @@ class UserLoginViewModel : ViewModel() {
     }
 
     fun setShowLoginScreen(loginScreen: LoginScreen) {
-        onRetry()
+        viewModelScope.launch(Dispatchers.IO) {
+            onRetry()
 
-        if (loginScreen == LoginScreen.QR) {
-            SteamService.startLoginWithQr()
-        } else {
-            SteamService.stopLoginWithQr()
-        }
+            if (loginScreen == LoginScreen.QR) {
+                SteamService.startLoginWithQr()
+            } else {
+                SteamService.stopLoginWithQr()
+            }
 
-        _loginState.update { currentState ->
-            currentState.copy(loginScreen = loginScreen)
+            _loginState.update { currentState ->
+                currentState.copy(loginScreen = loginScreen)
+            }
         }
     }
 
