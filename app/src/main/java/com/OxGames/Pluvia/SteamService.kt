@@ -219,11 +219,13 @@ class SteamService : Service(), IChallengeUrlChanged {
             get() = instance?._steamClient?.steamID
 
         fun setPersonaState(state: EPersonaState) {
-            instance?._steamFriends?.setPersonaState(state)
+            CoroutineScope(Dispatchers.IO).launch {
+                instance?._steamFriends?.setPersonaState(state)
+            }
         }
 
         fun requestUserPersona() {
-            CoroutineScope(Dispatchers.Default).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 userSteamId?.let {
                     // in order to get user avatar url and other info
                     instance?._steamFriends?.requestFriendInfo(it)
@@ -360,7 +362,7 @@ class SteamService : Service(), IChallengeUrlChanged {
                                             SplitInstallSessionStatus.INSTALLING,
                                             SplitInstallSessionStatus.DOWNLOADED,
                                             SplitInstallSessionStatus.DOWNLOADING,
-                                            -> {
+                                                -> {
                                                 if (!isActive) {
                                                     splitManager.cancelInstall(moduleInstallSessionId)
                                                     break
