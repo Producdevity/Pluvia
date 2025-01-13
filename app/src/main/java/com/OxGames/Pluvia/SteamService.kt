@@ -2112,7 +2112,7 @@ class SteamService : Service(), IChallengeUrlChanged {
     }
 
     private fun onLicenseList(callback: LicenseListCallback) {
-        Timber.i("Received License List ${callback.result}")
+        Timber.i("Received License List ${callback.result}, size: ${callback.licenseList.size}")
 
         if (callback.result == EResult.OK) {
             for (i in callback.licenseList.indices) {

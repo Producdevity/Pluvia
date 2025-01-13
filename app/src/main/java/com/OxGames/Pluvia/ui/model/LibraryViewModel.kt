@@ -34,18 +34,22 @@ class LibraryViewModel : ViewModel() {
         PluviaApp.events.off<SteamEvent.AppInfoReceived, Unit>(onAppInfoReceived)
     }
 
-    fun onFabFilter(filter: FabFilter) {
-        _state.update { currentValue ->
-            when (filter) {
-                FabFilter.SEARCH -> {
-                    Timber.w("Search not implemented!")
-                    currentValue.copy()
-                }
+    fun onIsSearching(value: Boolean) {
+        _state.update { it.copy(isSearching = value) }
 
-                FabFilter.INSTALLED -> currentValue.copy(appInfoSortType = FabFilter.INSTALLED)
-                FabFilter.ALPHABETIC -> currentValue.copy(appInfoSortType = FabFilter.ALPHABETIC)
-            }
+        if (!value) {
+            getAppList()
         }
+    }
+
+    fun onSearchQuery(value: String) {
+        _state.update { it.copy(searchQuery = value) }
+
+        getAppList()
+    }
+
+    fun onFabFilter(value: FabFilter) {
+        _state.update { it.copy(appInfoSortType = value) }
 
         getAppList()
     }
@@ -54,7 +58,7 @@ class LibraryViewModel : ViewModel() {
         val list = with(state.value) {
             SteamService.getAppList(EnumSet.of(AppType.game))
                 .filter { if (appInfoSortType == FabFilter.INSTALLED) SteamService.isAppInstalled(it.appId) else true }
-                .filter { it.name.contains(searchText, true) }
+                .filter { it.name.contains(searchQuery, true) }
                 .let {
                     if (appInfoSortType == FabFilter.ALPHABETIC) {
                         it.sortedBy { appInfo -> appInfo.name }
