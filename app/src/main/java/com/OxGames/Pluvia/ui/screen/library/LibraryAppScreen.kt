@@ -358,8 +358,8 @@ fun AppScreen(
                                     message = "The Ubuntu image needs to be downloaded and installed before " +
                                         "being able to edit the configuration. This operation might take " +
                                         "a few minutes. Would you like to continue?",
-                                    confirmBtnText = "Proceed",
-                                    dismissBtnText = "Cancel",
+                                    confirmBtnText = context.getString(R.string.proceed),
+                                    dismissBtnText = context.getString(R.string.cancel),
                                 )
                             } else {
                                 msgDialogState = MessageDialogState(
@@ -369,8 +369,8 @@ fun AppScreen(
                                     message = "The Ubuntu image needs to be installed before being able to edit " +
                                         "the configuration. This operation might take a few minutes. " +
                                         "Would you like to continue?",
-                                    confirmBtnText = "Proceed",
-                                    dismissBtnText = "Cancel",
+                                    confirmBtnText = context.getString(R.string.proceed),
+                                    dismissBtnText = context.getString(R.string.cancel),
                                 )
                             }
                         } else {
